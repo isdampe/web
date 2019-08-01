@@ -178,8 +178,6 @@ class PreferenceSettings extends Component<
       />
     ) : null;
 
-    console.log(languages);
-
     return (
       <Form onSubmit={this.saveSettings}>
         {alert}
