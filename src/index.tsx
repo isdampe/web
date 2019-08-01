@@ -20,19 +20,41 @@ import Full from "./containers/Full";
 import api from "./util/api";
 import { setupI18n } from "./util/i18n";
 import { getBasePath } from "./util/basePath";
+import store from "./redux/store";
+import { Provider } from "react-redux";
 
 // Before rendering anything, check if there is a session cookie.
 // Note: the user could have an old session, so the first API call
 // will set loggedIn to false if necessary
 api.loggedIn = document.cookie.includes("user_id=");
 
+// Verify the loggedIn status with the server. If we thought we were logged out
+// but the API does not require authentication, refresh the page so we start
+// in logged-in mode.
+//
+// An alternative to refreshing the page is to provide the loggedIn status via
+// React context or some other mechanism. With the current infrastructure of
+// the web interface, it is very messy to use React context for this as
+// `api.loggedIn` is used in a few hard to reach spots. We should look into
+// Redux for a cleaner approach.
+api.checkAuthStatus().then(() => {
+  if (!api.loggedIn) {
+    // No authentication is required for this API. Refresh the page so we start
+    // in logged-in mode
+    window.location.reload();
+  }
+});
+
 setupI18n();
+store.runSaga();
 
 ReactDOM.render(
-  <BrowserRouter basename={getBasePath()}>
-    <Switch>
-      <Route path="/" name="Home" component={Full} />
-    </Switch>
-  </BrowserRouter>,
+  <Provider store={store}>
+    <BrowserRouter basename={getBasePath()}>
+      <Switch>
+        <Route path="/" name="Home" component={Full} />
+      </Switch>
+    </BrowserRouter>
+  </Provider>,
   document.getElementById("root")
 );
